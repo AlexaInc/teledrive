@@ -8,8 +8,16 @@ COPY yarn.lock .
 COPY package.json .
 COPY api/package.json api/package.json
 COPY web/package.json web/package.json
-COPY docker/.env .
-RUN yarn cache clean
+# COPY docker/.env . 
 RUN yarn install --network-timeout 1000000
 COPY . .
 RUN yarn workspaces run build
+
+FROM node:18.16.0-slim
+WORKDIR /apps
+COPY --from=build /apps .
+
+ENV PORT=7860
+EXPOSE 7860
+
+CMD ["yarn", "start"]
