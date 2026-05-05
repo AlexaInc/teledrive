@@ -1,6 +1,7 @@
 FROM node:18.16.0 as build
-ARG REACT_APP_TG_API_ID
-ARG REACT_APP_TG_API_HASH
+# We use fixed placeholders that entrypoint.sh will replace
+ENV REACT_APP_TG_API_ID=999123456789
+ENV REACT_APP_TG_API_HASH=REPLACE_ME_API_HASH_PLACEHOLDER
 
 WORKDIR /apps
 
@@ -10,15 +11,17 @@ COPY api/package.json api/package.json
 COPY web/package.json web/package.json
 RUN yarn install --network-timeout 1000000
 COPY . .
-# The React build will use the ARGs above
 RUN yarn workspaces run build
 
 FROM node:18.16.0-slim
 WORKDIR /apps
 COPY --from=build /apps .
 
-# Runtime environment variables for the API server
+# Runtime environment variables
 ENV PORT=7860
 EXPOSE 7860
 
-CMD ["yarn", "start"]
+COPY entrypoint.sh /apps/entrypoint.sh
+RUN chmod +x /apps/entrypoint.sh
+
+ENTRYPOINT ["/apps/entrypoint.sh"]
