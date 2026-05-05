@@ -3,14 +3,12 @@ FROM node:18.16.0 as build
 ENV REACT_APP_TG_API_ID=999123456789
 ENV REACT_APP_TG_API_HASH=REPLACE_ME_API_HASH_PLACEHOLDER
 
-WORKDIR /apps
+RUN apt-get update && apt-get install -y git
 
-COPY yarn.lock .
-COPY package.json .
-COPY api/package.json api/package.json
-COPY web/package.json web/package.json
+WORKDIR /apps
+RUN git clone https://github.com/AlexaInc/teledrive.git .
+
 RUN yarn install --network-timeout 1000000
-COPY . .
 RUN yarn workspaces run build
 
 FROM node:18.16.0-slim
