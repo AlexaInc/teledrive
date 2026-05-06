@@ -3,6 +3,10 @@ FROM node:18-alpine as build
 ENV REACT_APP_TG_API_ID=999123456789
 ENV REACT_APP_TG_API_HASH=REPLACE_ME_API_HASH_PLACEHOLDER
 
+# Memory optimizations to prevent OOM
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV GENERATE_SOURCEMAP=false
+
 # Install git and other build deps
 RUN apk add --no-cache git python3 make g++
 
