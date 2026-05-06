@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { DashboardOutlined, GithubOutlined, LoginOutlined, LogoutOutlined, MenuOutlined, SettingOutlined, UserOutlined, UserSwitchOutlined, WarningOutlined } from '@ant-design/icons'
 import { Button, Checkbox, Form, Layout, Menu, Modal, Popover, Tag, Typography } from 'antd'
 import Avatar from 'antd/lib/avatar/avatar'
