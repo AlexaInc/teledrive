@@ -34,7 +34,7 @@ export class Auth {
         allowAppHash: true,
       })
     }))) as any
-    const session = req.tg.session.save()
+    const session = req.tg.session.save() as unknown as string
     const accessToken = sign({ session }, API_JWT_SECRET, { expiresIn: '3h' })
     return res.cookie('authorization', `Bearer ${accessToken}`)
       .send({ phoneCodeHash, timeout, accessToken })
@@ -51,7 +51,7 @@ export class Auth {
     const { phoneCodeHash: newPhoneCodeHash, timeout } = (await req.tg.invoke(new Api.auth.ResendCode({
       phoneNumber, phoneCodeHash
     }))) as any
-    const session = req.tg.session.save()
+    const session = req.tg.session.save() as unknown as string
     const accessToken = sign({ session }, API_JWT_SECRET, { expiresIn: '3h' })
     return res.cookie('authorization', `Bearer ${accessToken}`)
       .send({ phoneCodeHash: newPhoneCodeHash, timeout, accessToken })
@@ -102,12 +102,12 @@ export class Auth {
         }
       })
     }
-    const session = req.tg.session.save()
+    const session = req.tg.session.save() as unknown as string as unknown as string
     await prisma.users.update({
       data: {
         username,
         plan: 'premium',
-        tg_session: session,
+        tg_session: session as unknown as string,
         tg_password: password || null
       },
       where: { id: user.id }
@@ -198,7 +198,7 @@ export class Auth {
         where: { id: user.id }
       })
 
-      const session = req.tg.session.save()
+      const session = req.tg.session.save() as unknown as string
       const auth = {
         session,
         accessToken: sign({ session }, API_JWT_SECRET, { expiresIn: '15h' }),
@@ -240,7 +240,7 @@ export class Auth {
       exceptIds: []
     }))
 
-    const session = req.tg.session.save()
+    const session = req.tg.session.save() as unknown as string
     const auth = {
       session,
       accessToken: sign({ session }, API_JWT_SECRET, { expiresIn: '15h' }),
@@ -314,7 +314,7 @@ export class Auth {
       })
 
 
-      const session = req.tg.session.save()
+      const session = req.tg.session.save() as unknown as string
       const auth = {
         session,
         accessToken: sign({ session }, API_JWT_SECRET, { expiresIn: '15h' }),
@@ -344,7 +344,7 @@ export class Auth {
         await prisma.users.update({
           where: { id: user.id },
           data: {
-            tg_session: auth.session,
+            tg_session: auth.session as unknown as string,
             tg_password: password || null
           }
         })
@@ -362,7 +362,7 @@ export class Auth {
 
       // build response with user data and auth data
       const buildResponse = (data: Record<string, any> & { user?: { id: string } }, phoneNumber?: string, password?: string) => {
-        const session = req.tg.session.save()
+        const session = req.tg.session.save() as unknown as string as unknown as string
         const auth = {
           session,
           accessToken: sign({ session }, API_JWT_SECRET, { expiresIn: '15h' }),
@@ -392,7 +392,7 @@ export class Auth {
           prisma.users.update({
             where: { id: data.user.id },
             data: {
-              tg_session: auth.session,
+              tg_session: auth.session as unknown as string,
               tg_password: password || null
             }
           }).catch(console.error)
