@@ -17,7 +17,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -25,7 +26,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     }
 
     const result = await Redis.connect().getFromCacheFirst(`history:${req.user.id}:${JSON.stringify(req.params)}:${JSON.stringify(req.query)}`, async () => {
@@ -50,15 +52,18 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else {
-      return res.send({ messages: {
-        messages: [],
-        chats: [],
-        users: []
-      } })
+      return res.send({
+        messages: {
+          messages: [],
+          chats: [],
+          users: []
+        }
+      })
     }
-    const messages = await req.tg.invoke(new Api.channels.GetSponsoredMessages({ channel: peer }))
+    const messages = await req.tg.invoke(new (Api.messages as any).GetSponsoredMessages({ peer }))
     return res.send({ messages })
   }
 
@@ -72,11 +77,12 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else {
       return res.status(202).send({ accepted: true })
     }
-    const accepted = await req.tg.invoke(new Api.channels.ViewSponsoredMessage({
+    const accepted = await req.tg.invoke(new (Api.channels as any).ViewSponsoredMessage({
       channel: peer, randomId: Buffer.from(randomId)
     }))
     return res.status(202).send({ accepted })
@@ -91,7 +97,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -99,7 +106,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     }
 
     try {
@@ -120,7 +128,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -128,7 +137,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     }
 
     const result = await req.tg.invoke(new Api.messages.SendMessage({
@@ -150,7 +160,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -158,7 +169,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     }
 
     const result = await req.tg.invoke(new Api.messages.EditMessage({
@@ -178,7 +190,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -186,7 +199,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(accessHash as string) })
+        accessHash: bigInt(accessHash as string)
+      })
     }
 
     try {
@@ -200,15 +214,17 @@ export class Messages {
   @Endpoint.POST('/forward/:msgId', { middlewares: [Auth] })
   public async forward(req: Request, res: Response): Promise<any> {
     const { msgId } = req.params
-    const { from, to } = req.body as { from?: {
-      type: string,
-      id: number,
-      accessHash?: string
-    }, to: {
-      type: string,
-      id: number,
-      accessHash?: string
-    } | string }
+    const { from, to } = req.body as {
+      from?: {
+        type: string,
+        id: number,
+        accessHash?: string
+      }, to: {
+        type: string,
+        id: number,
+        accessHash?: string
+      } | string
+    }
 
     let fromPeer: Api.InputPeerChannel | Api.InputPeerUser | Api.InputPeerChat | 'me'
     let toPeer: Api.InputPeerChannel | Api.InputPeerUser | Api.InputPeerChat | string
@@ -217,7 +233,8 @@ export class Messages {
     } else if (from.type === 'channel') {
       fromPeer = new Api.InputPeerChannel({
         channelId: bigInt(from.id),
-        accessHash: bigInt(from.accessHash as string) })
+        accessHash: bigInt(from.accessHash as string)
+      })
     } else if (from.type === 'chat') {
       fromPeer = new Api.InputPeerChat({
         chatId: bigInt(from.id)
@@ -225,7 +242,8 @@ export class Messages {
     } else if (from.type === 'user') {
       fromPeer = new Api.InputPeerUser({
         userId: bigInt(from.id),
-        accessHash: bigInt(from.accessHash as string) })
+        accessHash: bigInt(from.accessHash as string)
+      })
     }
 
     if (typeof to === 'string') {
@@ -233,7 +251,8 @@ export class Messages {
     } else if (to.type === 'channel') {
       toPeer = new Api.InputPeerChannel({
         channelId: bigInt(to.id),
-        accessHash: bigInt(to.accessHash as string) })
+        accessHash: bigInt(to.accessHash as string)
+      })
     } else if (to.type === 'chat') {
       toPeer = new Api.InputPeerChat({
         chatId: bigInt(to.id)
@@ -241,7 +260,8 @@ export class Messages {
     } else if (to.type === 'user') {
       toPeer = new Api.InputPeerUser({
         userId: bigInt(to.id),
-        accessHash: bigInt(to.accessHash as string) })
+        accessHash: bigInt(to.accessHash as string)
+      })
     }
 
     const result = await req.tg.invoke(new Api.messages.ForwardMessages({
@@ -297,7 +317,8 @@ export class Messages {
     if (type === 'channel') {
       peer = new Api.InputPeerChannel({
         channelId: bigInt(id),
-        accessHash: bigInt(req.query.accessHash as string) })
+        accessHash: bigInt(req.query.accessHash as string)
+      })
     } else if (type === 'chat') {
       peer = new Api.InputPeerChat({
         chatId: bigInt(id)
@@ -305,7 +326,8 @@ export class Messages {
     } else if (type === 'user') {
       peer = new Api.InputPeerUser({
         userId: bigInt(id),
-        accessHash: bigInt(req.query.accessHash as string) })
+        accessHash: bigInt(req.query.accessHash as string)
+      })
     }
     try {
       const file = await req.tg.downloadProfilePhoto(peer)
