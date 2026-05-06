@@ -1,4 +1,4 @@
-FROM node:18-alpine as build
+FROM node:18-bullseye-slim as build
 # We use fixed placeholders that entrypoint.sh will replace
 ENV REACT_APP_TG_API_ID=999123456789
 ENV REACT_APP_TG_API_HASH=REPLACE_ME_API_HASH_PLACEHOLDER
@@ -7,8 +7,8 @@ ENV REACT_APP_TG_API_HASH=REPLACE_ME_API_HASH_PLACEHOLDER
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 ENV GENERATE_SOURCEMAP=false
 
-# Install git and other build deps
-RUN apk add --no-cache git python3 make g++
+# Install build deps for Debian
+RUN apt-get update && apt-get install -y git python3 make g++ openssl
 
 WORKDIR /apps
 RUN git clone --depth 1 https://github.com/AlexaInc/teledrive.git .
@@ -16,7 +16,7 @@ RUN git clone --depth 1 https://github.com/AlexaInc/teledrive.git .
 RUN yarn install --network-timeout 1000000 --ignore-engines
 RUN yarn workspaces run build
 
-FROM node:18-alpine
+FROM node:18-bullseye-slim
 WORKDIR /apps
 COPY --from=build /apps .
 
