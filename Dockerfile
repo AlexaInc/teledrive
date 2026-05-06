@@ -9,7 +9,7 @@ RUN apk add --no-cache git python3 make g++
 WORKDIR /apps
 RUN git clone --depth 1 https://github.com/AlexaInc/teledrive.git .
 
-RUN yarn install --network-timeout 1000000
+RUN yarn install --network-timeout 1000000 --ignore-engines
 RUN yarn workspaces run build
 
 FROM node:18-alpine
