@@ -15,5 +15,10 @@ if [ -n "$REACT_APP_TG_API_HASH" ]; then
   find /apps/web/build -name "*.js" -exec sed -i "s/REPLACE_ME_API_HASH_PLACEHOLDER/$REACT_APP_TG_API_HASH/g" {} +
 fi
 
+# Run database migrations
+echo "Running database migrations..."
+cd /apps/api && npx prisma db push --accept-data-loss
+
 # Start the application
-exec yarn start
+echo "Starting application..."
+cd /apps && exec yarn start
