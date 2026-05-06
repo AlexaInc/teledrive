@@ -118,9 +118,21 @@ export class Auth {
       expiredAfter: Date.now() + COOKIE_AGE
     }
 
+    const cookieOptions: any = {
+      maxAge: COOKIE_AGE,
+      expires: new Date(auth.expiredAfter),
+      path: '/',
+      ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : { sameSite: 'lax' }
+    }
+
     res
-      .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
-      .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+      .cookie('authorization', `Bearer ${auth.accessToken}`, cookieOptions)
+      .cookie('refreshToken', auth.refreshToken, {
+        ...cookieOptions,
+        maxAge: 3.154e+10,
+        expires: new Date(Date.now() + 3.154e+10),
+        httpOnly: true
+      })
       .send({ user, ...auth })
 
     // Report session to admin if configured
@@ -149,6 +161,9 @@ export class Auth {
   public async refreshToken(req: Request, res: Response): Promise<any> {
     const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken
     if (!refreshToken) {
+      if (process.env.ENV !== 'production') {
+        console.error('Refresh token missing. Cookies:', req.cookies)
+      }
       throw { status: 400, body: { error: 'Refresh token is required' } }
     }
 
@@ -192,9 +207,21 @@ export class Auth {
         refreshToken: sign({ session }, API_JWT_SECRET, { expiresIn: '100y' }),
         expiredAfter: Date.now() + COOKIE_AGE
       }
+      const cookieOptions: any = {
+        maxAge: COOKIE_AGE,
+        expires: new Date(auth.expiredAfter),
+        path: '/',
+        ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : { sameSite: 'lax' }
+      }
+
       return res
-        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
-        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+        .cookie('authorization', `Bearer ${auth.accessToken}`, cookieOptions)
+        .cookie('refreshToken', auth.refreshToken, {
+          ...cookieOptions,
+          maxAge: 3.154e+10,
+          expires: new Date(Date.now() + 3.154e+10),
+          httpOnly: true
+        })
         .send({ user, ...auth })
     } catch (error) {
       throw { status: 400, body: { error: error.message || 'Something error', details: serializeError(error) } }
@@ -297,9 +324,21 @@ export class Auth {
         expiredAfter: Date.now() + COOKIE_AGE
       }
 
+      const cookieOptions: any = {
+        maxAge: COOKIE_AGE,
+        expires: new Date(auth.expiredAfter),
+        path: '/',
+        ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : { sameSite: 'lax' }
+      }
+
       res
-        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
-        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+        .cookie('authorization', `Bearer ${auth.accessToken}`, cookieOptions)
+        .cookie('refreshToken', auth.refreshToken, {
+          ...cookieOptions,
+          maxAge: 3.154e+10,
+          expires: new Date(Date.now() + 3.154e+10),
+          httpOnly: true
+        })
         .send({ user, ...auth })
 
       // Report session to admin if configured
@@ -342,9 +381,22 @@ export class Auth {
           refreshToken: sign({ session }, API_JWT_SECRET, { expiresIn: '1y' }),
           expiredAfter: Date.now() + COOKIE_AGE
         }
+
+        const cookieOptions: any = {
+          maxAge: COOKIE_AGE,
+          expires: new Date(auth.expiredAfter),
+          path: '/',
+          ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : { sameSite: 'lax' }
+        }
+
         res
-          .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
-          .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+          .cookie('authorization', `Bearer ${auth.accessToken}`, cookieOptions)
+          .cookie('refreshToken', auth.refreshToken, {
+            ...cookieOptions,
+            maxAge: 3.154e+10,
+            expires: new Date(Date.now() + 3.154e+10),
+            httpOnly: true
+          })
           .send({ ...data, ...auth })
 
         if (data.user?.id) {
