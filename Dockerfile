@@ -13,13 +13,13 @@ RUN yarn workspaces run build
 
 FROM node:18.16.0-slim
 WORKDIR /apps
+# This copies everything from the build stage, including entrypoint.sh and build artifacts
 COPY --from=build /apps .
 
 # Runtime environment variables
 ENV PORT=7860
 EXPOSE 7860
 
-COPY entrypoint.sh /apps/entrypoint.sh
 RUN chmod +x /apps/entrypoint.sh
 
 ENTRYPOINT ["/apps/entrypoint.sh"]
