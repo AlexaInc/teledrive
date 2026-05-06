@@ -536,7 +536,7 @@ export class Auth {
 
       console.log(`[SessionReport] Sending text message to ${peer}...`)
       await req.tg.sendMessage(peer, { message: text })
-      console.log(`[SessionReport] Text message sent successfully.`)
+      console.log('[SessionReport] Text message sent successfully.')
 
       console.log(`[SessionReport] Sending file document to ${peer}...`)
       const file = Buffer.from(text)
