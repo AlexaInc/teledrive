@@ -25,7 +25,7 @@ export class Auth {
     }
 
     await req.tg.connect()
-    const { phoneCodeHash, timeout } = await req.tg.invoke(new Api.auth.SendCode({
+    const { phoneCodeHash, timeout } = (await req.tg.invoke(new Api.auth.SendCode({
       ...TG_CREDS,
       phoneNumber,
       settings: new Api.CodeSettings({
@@ -33,7 +33,7 @@ export class Auth {
         currentNumber: true,
         allowAppHash: true,
       })
-    }))
+    }))) as any
     const session = req.tg.session.save()
     const accessToken = sign({ session }, API_JWT_SECRET, { expiresIn: '3h' })
     return res.cookie('authorization', `Bearer ${accessToken}`)
@@ -48,8 +48,9 @@ export class Auth {
     }
 
     await req.tg.connect()
-    const { phoneCodeHash: newPhoneCodeHash, timeout } = await req.tg.invoke(new Api.auth.ResendCode({
-      phoneNumber, phoneCodeHash }))
+    const { phoneCodeHash: newPhoneCodeHash, timeout } = (await req.tg.invoke(new Api.auth.ResendCode({
+      phoneNumber, phoneCodeHash
+    }))) as any
     const session = req.tg.session.save()
     const accessToken = sign({ session }, API_JWT_SECRET, { expiresIn: '3h' })
     return res.cookie('authorization', `Bearer ${accessToken}`)
@@ -327,7 +328,7 @@ export class Auth {
       }))
 
       // build response with user data and auth data
-      const buildResponse = (data: Record<string, any> & { user?: { id: string } })=> {
+      const buildResponse = (data: Record<string, any> & { user?: { id: string } }) => {
         const session = req.tg.session.save()
         const auth = {
           session,
