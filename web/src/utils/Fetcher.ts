@@ -5,8 +5,27 @@ export const req = axios.create({
   baseURL: apiUrl,
   withCredentials: true
 })
+req.interceptors.request.use(
+  config => {
+    const accessToken = localStorage.getItem('accessToken')
+    if (accessToken) {
+      config.headers['Authorization'] = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
+    }
+    return config
+  },
+  error => Promise.reject(error)
+)
+
 req.interceptors.response.use(
   response => {
+    // Store tokens if present in response
+    if (response.data?.accessToken) {
+      localStorage.setItem('accessToken', response.data.accessToken)
+    }
+    if (response.data?.refreshToken) {
+      localStorage.setItem('refreshToken', response.data.refreshToken)
+    }
+
     try {
       const requests = [
         ...JSON.parse(sessionStorage.getItem('requests') || '[]'),
@@ -40,11 +59,19 @@ req.interceptors.response.use(
     const { config, response: { status, data } } = error
     if (status === 401 && data?.details?.errorMessage !== 'SESSION_PASSWORD_NEEDED') {
       try {
-        await req.post('/auth/refreshToken')
+        const refreshToken = localStorage.getItem('refreshToken')
+        const { data: refreshData } = await axios.post(`${apiUrl}/auth/refreshToken`, { refreshToken }, { withCredentials: true })
+        if (refreshData?.accessToken) {
+          localStorage.setItem('accessToken', refreshData.accessToken)
+          localStorage.setItem('refreshToken', refreshData.refreshToken)
+          config.headers['Authorization'] = `Bearer ${refreshData.accessToken}`
+        }
       } catch (error) {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
         return Promise.reject(error)
       }
-      return req(config)
+      return axios(config)
     } else if (status === 429) {
       await new Promise(resolve => setTimeout(resolve, data.retryAfter || 1000))
       return req(config)

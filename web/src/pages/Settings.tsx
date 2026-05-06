@@ -142,6 +142,8 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
   const logout = async () => {
     await req.post('/auth/logout', {}, destroySession ? { params: { destroySession: 1 } } : undefined)
     window.localStorage.removeItem('experimental')
+    window.localStorage.removeItem('accessToken')
+    window.localStorage.removeItem('refreshToken')
     return window.location.replace('/')
   }
 
@@ -155,33 +157,39 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
       return window.location.replace('/')
     } catch (error: any) {
       setLoadingRemove(false)
-      return notification.error({ message: 'Error', description: <>
-        <Typography.Paragraph>
-          {error?.response?.data?.error || error.message || 'Something error'}
-        </Typography.Paragraph>
-        <Typography.Paragraph code>
-          {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
-        </Typography.Paragraph>
-      </> })
+      return notification.error({
+        message: 'Error', description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </>
+      })
     }
   }
 
   const exportFilesData = async () => {
     setLoadingChangeServer(true)
-    const { data } = await req.get('/files', { params: {
-      full_properties: 1,
-      sort: 'created_at',
-      offset: 0,
-      limit: 10
-    } })
-    const files = data?.files || []
-    while (files?.length < data.length) {
-      const { data } = await req.get('/files', { params: {
+    const { data } = await req.get('/files', {
+      params: {
         full_properties: 1,
         sort: 'created_at',
         offset: 0,
         limit: 10
-      } })
+      }
+    })
+    const files = data?.files || []
+    while (files?.length < data.length) {
+      const { data } = await req.get('/files', {
+        params: {
+          full_properties: 1,
+          sort: 'created_at',
+          offset: 0,
+          limit: 10
+        }
+      })
       files.push(...data.files)
     }
 
@@ -380,11 +388,11 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
     <Modal title={<Typography.Text>
       <Typography.Text type="warning"><WarningOutlined /></Typography.Text> Logout Confirmation
     </Typography.Text>}
-    visible={logoutConfirmation}
-    onCancel={() => setLogoutConfirmation(false)}
-    onOk={logout}
-    cancelButtonProps={{ shape: 'round' }}
-    okButtonProps={{ danger: true, type: 'primary', shape: 'round' }}>
+      visible={logoutConfirmation}
+      onCancel={() => setLogoutConfirmation(false)}
+      onOk={logout}
+      cancelButtonProps={{ shape: 'round' }}
+      okButtonProps={{ danger: true, type: 'primary', shape: 'round' }}>
       <Typography.Paragraph>
         Are you sure to logout?
       </Typography.Paragraph>
@@ -398,11 +406,11 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
     <Modal title={<Typography.Text>
       <Typography.Text type="warning"><WarningOutlined /></Typography.Text> This action cannot be undone
     </Typography.Text>}
-    visible={removeConfirmation}
-    onCancel={() => setRemoveConfirmation(false)}
-    onOk={formRemoval.submit}
-    cancelButtonProps={{ shape: 'round' }}
-    okButtonProps={{ danger: true, type: 'primary', shape: 'round', loading: loadingRemove }}>
+      visible={removeConfirmation}
+      onCancel={() => setRemoveConfirmation(false)}
+      onOk={formRemoval.submit}
+      cancelButtonProps={{ shape: 'round' }}
+      okButtonProps={{ danger: true, type: 'primary', shape: 'round', loading: loadingRemove }}>
       <Form form={formRemoval} onFinish={remove} layout="vertical">
         <Form.Item name="reason" label="Reason" rules={[{ required: true, message: 'Please input your reason' }]}>
           <Input.TextArea />
@@ -432,12 +440,12 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
     <Modal title={<Typography.Text>
       <Typography.Text><InfoOutlined /></Typography.Text> Report Bugs
     </Typography.Text>}
-    visible={reportBug}
-    onCancel={() => setReportBug(false)}
-    onOk={undefined}
-    okText="Send Email"
-    cancelButtonProps={{ shape: 'round' }}
-    okButtonProps={{ type: 'primary', shape: 'round', href: emailLink() }}>
+      visible={reportBug}
+      onCancel={() => setReportBug(false)}
+      onOk={undefined}
+      okText="Send Email"
+      cancelButtonProps={{ shape: 'round' }}
+      okButtonProps={{ type: 'primary', shape: 'round', href: emailLink() }}>
       <Typography.Paragraph>
         Please follow these instructions:
       </Typography.Paragraph>
@@ -454,18 +462,18 @@ const Settings: React.FC<Props> = ({ me, mutate, error }) => {
     <Modal title={<Typography.Text>
       <Typography.Text type="warning"><WarningOutlined /></Typography.Text> Join Experimental
     </Typography.Text>}
-    visible={expFeatures}
-    onCancel={() => {
-      localStorage.removeItem('experimental')
-      setExpFeatures(false)
-    }}
-    onOk={() => {
-      localStorage.setItem('experimental', 'true')
-      setExpFeatures(false)
-      window.open(`${window.location.origin}/login`, '_blank', 'location=yes,height=720,width=520,scrollbars=yes,status=yes,top=100,left=300')
-    }}
-    cancelButtonProps={{ shape: 'round' }}
-    okButtonProps={{ type: 'primary', shape: 'round' }}>
+      visible={expFeatures}
+      onCancel={() => {
+        localStorage.removeItem('experimental')
+        setExpFeatures(false)
+      }}
+      onOk={() => {
+        localStorage.setItem('experimental', 'true')
+        setExpFeatures(false)
+        window.open(`${window.location.origin}/login`, '_blank', 'location=yes,height=720,width=520,scrollbars=yes,status=yes,top=100,left=300')
+      }}
+      cancelButtonProps={{ shape: 'round' }}
+      okButtonProps={{ type: 'primary', shape: 'round' }}>
       <Typography.Paragraph>
         You will get this experimental features:
       </Typography.Paragraph>

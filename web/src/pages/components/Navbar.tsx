@@ -24,6 +24,8 @@ const Navbar: React.FC<Props> = ({ user }) => {
   const logout = async () => {
     await req.post('/auth/logout', {}, destroySession ? { params: { destroySession: 1 } } : undefined)
     window.localStorage.removeItem('experimental')
+    window.localStorage.removeItem('accessToken')
+    window.localStorage.removeItem('refreshToken')
     return window.location.replace('/')
   }
 
@@ -71,11 +73,11 @@ const Navbar: React.FC<Props> = ({ user }) => {
     <Modal title={<Typography.Text>
       <Typography.Text type="warning"><WarningOutlined /></Typography.Text> Confirmation
     </Typography.Text>}
-    visible={logoutConfirmation}
-    onCancel={() => setLogoutConfirmation(false)}
-    onOk={logout}
-    cancelButtonProps={{ shape: 'round' }}
-    okButtonProps={{ danger: true, type: 'primary', shape: 'round' }}>
+      visible={logoutConfirmation}
+      onCancel={() => setLogoutConfirmation(false)}
+      onOk={logout}
+      cancelButtonProps={{ shape: 'round' }}
+      okButtonProps={{ danger: true, type: 'primary', shape: 'round' }}>
       <Typography.Paragraph>
         Are you sure to logout?
       </Typography.Paragraph>
