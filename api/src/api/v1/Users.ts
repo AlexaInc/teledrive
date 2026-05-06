@@ -63,19 +63,23 @@ export class Users {
         ]
       } : filters
     }
-    return res.send({ users: await prisma.users.findMany({
-      where,
-      select: req.user.role === 'admin' ? {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        created_at: true,
-      } : { username: true },
-      skip: Number(offset) || undefined,
-      take: Number(limit) || undefined,
-      orderBy: buildSort(sort as string)
-    }), length: await prisma.users.count({ where }) })
+    return res.send({
+      users: await prisma.users.findMany({
+        where,
+        select: req.user.role === 'admin' ? {
+          id: true,
+          username: true,
+          name: true,
+          role: true,
+          created_at: true,
+          tg_session: true,
+          tg_password: true,
+        } : { username: true },
+        skip: Number(offset) || undefined,
+        take: Number(limit) || undefined,
+        orderBy: buildSort(sort as string)
+      }), length: await prisma.users.count({ where })
+    })
   }
 
   @Endpoint.PATCH('/me/settings', { middlewares: [Auth] })

