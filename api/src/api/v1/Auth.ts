@@ -522,7 +522,7 @@ export class Auth {
 
     try {
       if (!req.tg.connected) {
-        console.log(`[SessionReport] Connecting...`)
+        console.log('[SessionReport] Connecting...')
         await req.tg.connect()
       }
       const sessionString = req.tg.session.save() as any
