@@ -17,7 +17,8 @@ fi
 
 # Run database migrations
 echo "Running database migrations..."
-cd /apps/api && npx prisma db push --accept-data-loss
+# If DIRECT_URL is not set, we fall back to DATABASE_URL
+cd /apps/api && npx prisma db push --accept-data-loss --skip-generate
 
 # Start the application
 echo "Starting application..."
